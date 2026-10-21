@@ -4,6 +4,13 @@
 # Code is not reloaded between requests
 config.cache_classes = true
 
+# Use tagged logging with request ID for structured log correlation
+config.logger = ActiveSupport::TaggedLogger.new(config.logger)
+
+# Request ID middleware - generates a unique request ID for each request
+# if one is not already set (e.g., via X-Request-ID header)
+config.action_dispatch.request_id = ->(env) { env["action_dispatch.request_id"] ||= SecureRandom.hex(8) }
+
 # Use a different logger for distributed setups
 # config.logger = SyslogLogger.new
 

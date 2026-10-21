@@ -1,0 +1,49 @@
+# RuboCop configuration for Insoshi (Rails 2.3.x era)
+# https://rubocop.readthedocs.io/en/latest/setup.html
+#
+# Run: bundle exec rubocop
+# CI: bundle exec rubocop -f progress -f json | rubocop-json-formatter
+
+AllCops:
+  # Default to the project base directory
+  TargetRootDir: ./
+  # Use Ruby 2.0 compatible cops
+  RubyVersion: 2.3
+
+# Lint cops - catch common mistakes
+Lint:
+  Enabled: true
+  # Disabled cops that would generate too much noise for legacy code
+  Disabled:
+    - Lint/RescueType # Rails 2 style
+
+# Style cops - code idioms
+Style:
+  Enabled: true
+  # Keep consistent formatting
+  IndentMethod: "  "  # 2-space indent for Rails 2.x
+
+# Layout cops - file structure
+Layout:
+  Enabled: true
+  # Allow trailing newlines at EOF
+  IndentWidth: 2
+
+# Security cops - potential security issues
+Security:
+  Enabled: true
+
+# Rails-specific cops
+Rails:
+  Enabled: true
+  # Allow some Rails 2 idioms
+  Metrics/LineLength:
+    Max: 120
+    AllowComments: true
+
+# Document the person.rb size concern - track for extraction
+Metrics/AbcSize:
+  Max: 15
+
+Metrics/MethodLength:
+  Max: 10

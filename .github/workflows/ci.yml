@@ -1,0 +1,86 @@
+# GitHub Actions CI workflow for Insoshi
+# Rails 2.3.x era social networking engine
+# https://docs.github.com/en/actions/creating-actions/workflow-syntax-for-github-actions
+name: CI
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+
+jobs:
+  test:
+    name: Test on Ruby ${{ matrix.ruby-version }}
+    runs-on: ubuntu-latest
+    # Matrix runs on multiple Ruby versions; skip incompatible ones gracefully
+    strategy:
+      matrix:
+        ruby-version: [ "2.0.0", "2.3.8", "2.5.9" ]
+    defaults:
+      run:
+        bundle_gemfile: Gemfile
+
+    steps:
+      # Checkout the repository
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # Set up Ruby version
+      - name: Set up Ruby
+        uses: ruby-actions/setup-ruby@v1
+        with:
+          ruby-version: ${{ matrix.ruby-version }}
+          # Bundle is included by default with ruby-actions/setup-ruby
+
+      # Install dependencies
+      - name: Install gems
+        run: bundle config set --local deployment 'false' && bundle install
+
+      # Run RuboCop (linting)
+      - name: Run RuboCop
+        run: bundle exec rubocop || exit 1
+
+      # Run RSpec test suite
+      - name: Run RSpec
+        run: bundle exec rspec
+
+      # Generate and upload coverage report
+      - name: Collect RSpec coverage
+        if: matrix.ruby-version == '2.5.9'
+        run: |
+          bundle exec rspec --format RspecJunitFormatter output/rspec.xml
+          bundle exec simplecov-to-html || true
+
+      # Fail CI if coverage drops below 50%
+      - name: Enforce coverage threshold
+        if: matrix.ruby-version == '2.5.9'
+        run: |
+          COVERAGE=$(bundle exec simplecov-rcov || echo "0") && \
+          echo "Current coverage: $COVERAGE%" && \
+          if [ "$(echo $COVERAGE | grep -o '[0-9]*' | head -1)" -lt 50 ]; then
+            echo "Coverage below 50% threshold - failing CI"
+            exit 1
+          fi
+
+  # Lint job - also runs RuboCop on the codebase
+  lint:
+    name: RuboCop Lint
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        bundle_gemfile: Gemfile
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Ruby
+        uses: ruby-actions/setup-ruby@v1
+        with:
+          ruby-version: "2.5.9"
+
+      - name: Install gems
+        run: bundle config set --local deployment 'false' && bundle install
+
+      - name: Run RuboCop
+        run: bundle exec rubocop -f github || exit 1
