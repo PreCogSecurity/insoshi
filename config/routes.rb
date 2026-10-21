@@ -62,6 +62,11 @@ ActionController::Routing::Routes.draw do |map|
   map.about '/about', :controller => 'home', :action => 'about'
   map.admin_home '/admin/home', :controller => 'home'
 
+  # Health check endpoint - used by load balancers and orchestration systems
+  # to determine instance readiness and database connectivity.
+  # GET /health?format=json
+  map.resources :health, :only => [:show], :controller => "health"
+
   # The priority is based upon order of creation: first created -> highest priority.
 
   # Sample of regular route:

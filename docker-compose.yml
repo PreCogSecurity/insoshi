@@ -1,0 +1,58 @@
+# docker-compose.yml for Insoshi (Rails 2.3.x social networking engine)
+# Brings up the Rails app with its MySQL database backing service.
+# https://docs.docker.com/compose/
+#
+# Services:
+#   - app:   Insoshi Rails server
+#   - db:    MySQL database
+#   - sphinx: Sphinx search daemon (optional, for search functionality)
+version: "3.8"
+
+services:
+  # MySQL database service
+  db:
+    image: mysql:5.7
+    container_name: insoshi_db
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ""
+      MYSQL_DATABASE: insoshi_development
+      MYSQL_USER: root
+      MYSQL_PASSWORD: ""
+    volumes:
+      - db_data:/var/lib/mysql
+    ports:
+      - "3306:3306"
+    command: --default-authentication-plugin=mysql_native_password
+
+  # Rails application service
+  app:
+    build: .
+    container_name: insoshi_app
+    restart: unless-stopped
+    depends_on:
+      - db
+    environment:
+      RAILS_ENV: development
+      DATABASE_HOST: db
+      DATABASE_USERNAME: root
+      DATABASE_PASSWORD: ""
+      DATABASE_NAME: insoshi_development
+      DEFAULT_ADMIN_PASSWORD: change_me_to_a_secure_password
+      SESSION_SECRET: change_me_to_a_secure_random_string
+    volumes:
+      - .:/insoshi
+    ports:
+      - "3000:3000"
+    command: bash -c "bundle exec rake db:migrate && script/server -b 0.0.0.0"
+
+  # Sphinx search daemon (for full-text search)
+  sphinx:
+    image: sphinxsearch:3.1
+    container_name: insoshi_sphinx
+    restart: unless-stopped
+    ports:
+      - "9312:9312"
+      - "9306:9306"
+    volumes:
+      - sphinx_data:/var/data/sphinx

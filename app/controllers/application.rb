@@ -60,7 +60,7 @@ class ApplicationController < ActionController::Base
     # Warn the admin if his email address or password is still the default.
     def admin_warning
       default_domain = "example.com"
-      default_password = "admin"
+      default_password = ENV.fetch("DEFAULT_ADMIN_PASSWORD", "admin")
       if logged_in? and current_person.admin? 
         if current_person.email =~ /@#{default_domain}$/
           flash[:notice] = %(Warning: your email address is still at 
